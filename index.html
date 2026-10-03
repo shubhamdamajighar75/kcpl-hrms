@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Kothari Hyundai HRMS v2</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root{--navy:#002c5f;--blue:#0057a8;--ice:#eef5fc;--bg:#f5f7fa;--line:#e4e9f0;--text:#172033;--muted:#667085;--green:#16803c;--red:#c62828;--amber:#a15c00}
+*{box-sizing:border-box}body{margin:0;font-family:Inter,Segoe UI,Arial,sans-serif;background:var(--bg);color:var(--text)}button,input,select,textarea{font:inherit}button{cursor:pointer}
+.hidden{display:none!important}.login{min-height:100vh;display:grid;place-items:center;background:linear-gradient(135deg,#001f45,#0062b8)}
+.loginbox{width:min(430px,92vw);background:#fff;border-radius:22px;padding:34px;box-shadow:0 25px 80px #00162f55}.logo{font-size:26px;font-weight:850;color:var(--navy)}.tag{color:var(--muted);margin:5px 0 24px}
+label{display:block;font-size:12px;font-weight:700;margin:13px 0 6px}input,select,textarea{width:100%;border:1px solid var(--line);border-radius:10px;padding:11px 12px;background:#fff;outline:0}textarea{min-height:90px}input:focus,select:focus,textarea:focus{border-color:var(--blue);box-shadow:0 0 0 3px #0057a814}
+.btn{border:0;border-radius:10px;padding:11px 15px;font-weight:750}.primary{background:var(--navy);color:#fff}.secondary{background:var(--ice);color:var(--navy)}.danger{background:#fee2e2;color:#991b1b}.login .btn{width:100%;margin-top:19px}.err{color:var(--red);font-size:12px;margin-top:10px}
+.app{display:flex;min-height:100vh}.side{width:255px;background:var(--navy);color:#fff;position:fixed;inset:0 auto 0 0;padding:20px 14px;z-index:10}.brand{font-size:19px;font-weight:850;padding:8px 10px 24px}.brand small{display:block;font-size:10px;opacity:.65;margin-top:4px}.nav button{display:block;width:100%;border:0;background:transparent;color:#dbeafe;text-align:left;padding:11px 12px;border-radius:9px;margin:2px 0}.nav button:hover,.nav button.active{background:#ffffff16;color:#fff}
+.main{margin-left:255px;flex:1}.top{height:68px;background:#fff;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;padding:0 25px;position:sticky;top:0;z-index:5}.profile{display:flex;gap:9px;align-items:center}.avatar{width:38px;height:38px;border-radius:50%;display:grid;place-items:center;background:var(--ice);color:var(--navy);font-weight:850}.content{padding:25px}.heading{display:flex;justify-content:space-between;gap:15px;align-items:center;margin-bottom:18px}.heading h1{font-size:25px;margin:0}.muted{font-size:12px;color:var(--muted)}.cards{display:grid;grid-template-columns:repeat(5,1fr);gap:14px}.card,.panel{background:#fff;border:1px solid var(--line);border-radius:14px;padding:18px}.metric{font-size:27px;font-weight:850;margin-top:7px}.grid{display:grid;grid-template-columns:1.4fr 1fr;gap:16px;margin-top:16px}.panel h3{margin:0 0 14px}.tablewrap{overflow:auto}.table{width:100%;border-collapse:collapse}.table th,.table td{font-size:12px;padding:11px 9px;border-bottom:1px solid var(--line);text-align:left;white-space:nowrap}.table th{color:var(--muted);background:#fafbfc}.badge{font-size:10px;font-weight:800;padding:4px 8px;border-radius:99px}.green{background:#dcfce7;color:#166534}.red{background:#fee2e2;color:#991b1b}.amber{background:#fef3c7;color:#92400e}.blue{background:#dbeafe;color:#1e40af}.formgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:13px}.full{grid-column:1/-1}.actions{display:flex;gap:8px;justify-content:flex-end;margin-top:16px}.toolbar{display:flex;gap:9px;margin-bottom:14px}.toolbar input{max-width:340px}.section{margin-top:16px}.mobile{display:none}
+@media(max-width:1050px){.cards{grid-template-columns:repeat(3,1fr)}.grid{grid-template-columns:1fr}.formgrid{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:700px){.side{display:none}.main{margin-left:0}.mobile{display:block}.cards{grid-template-columns:repeat(2,1fr)}.content{padding:15px}.formgrid{grid-template-columns:1fr}.full{grid-column:auto}.top{padding:0 13px}.profile .muted{display:none}}
+</style>
+</head>
+<body>
+<div id="login" class="login"><div class="loginbox">
+<div class="logo">KOTHARI HYUNDAI</div><div class="tag">Human Resource Management System v2</div>
+<label>Username / Mobile / Email</label><input id="loginId" placeholder="Enter login">
+<label>Password</label><input id="loginPw" type="password" placeholder="Password">
+<button class="btn primary" onclick="signIn()">Sign In</button><div id="loginErr" class="err"></div>
+</div></div>
+
+<div id="app" class="app hidden">
+<aside class="side"><div class="brand">KOTHARI HYUNDAI<small>HR MANAGEMENT SYSTEM</small></div>
+<nav class="nav">
+<button class="active" onclick="page('dashboard',this)">▦ Dashboard</button>
+<button onclick="page('employees',this)">◉ Employees</button>
+<button onclick="page('attendance',this)">✓ Attendance</button>
+<button onclick="page('leave',this)">▣ Leave</button>
+<button onclick="page('payroll',this)">₹ Payroll</button>
+<button onclick="page('performance',this)">★ Performance</button>
+<button onclick="page('documents',this)">▤ Documents</button>
+<button onclick="page('reports',this)">▥ Reports</button>
+<button onclick="page('settings',this)">⚙ Settings</button>
+</nav></aside>
+<main class="main"><header class="top"><button class="btn secondary mobile" onclick="document.querySelector('.side').style.display='block'">☰</button>
+<strong id="title">Dashboard</strong><div class="profile"><div><b id="uname">User</b><div id="urole" class="muted">Employee</div></div><div id="avatar" class="avatar">U</div><button class="btn secondary" onclick="signOut()">Logout</button></div></header>
+<div class="content">
+
+<section id="dashboard" class="screen"><div class="heading"><div><h1>HR Dashboard</h1><span class="muted">Workforce overview and pending actions</span></div></div>
+<div class="cards">
+<div class="card"><div class="muted">Employees</div><div id="mcEmp" class="metric">0</div></div>
+<div class="card"><div class="muted">Present Today</div><div id="mcPresent" class="metric">0</div></div>
+<div class="card"><div class="muted">Absent Today</div><div id="mcAbsent" class="metric">0</div></div>
+<div class="card"><div class="muted">On Leave</div><div id="mcLeave" class="metric">0</div></div>
+<div class="card"><div class="muted">Pending Leave</div><div id="mcPending" class="metric">0</div></div>
+</div>
+<div class="grid"><div class="panel"><h3>Recent Employees</h3><div class="tablewrap"><table class="table"><thead><tr><th>Code</th><th>Name</th><th>Department</th><th>Branch</th><th>Status</th></tr></thead><tbody id="recent"></tbody></table></div></div>
+<div class="panel"><h3>Quick Actions</h3><button class="btn primary" onclick="openEmp()">+ Add Employee</button> <button class="btn secondary" onclick="page('leave')">Leave Approval</button><button class="btn secondary" onclick="page('reports')">Reports</button></div></div></section>
+
+<section id="employees" class="screen hidden"><div class="heading"><div><h1>Employee Management</h1><span class="muted">Master data, profiles and branch assignment</span></div><button class="btn primary" onclick="openEmp()">+ Add Employee</button></div>
+<div class="panel"><div class="toolbar"><input id="empSearch" oninput="renderEmp()" placeholder="Search code, name, department, branch..."><button class="btn secondary" onclick="load()">Refresh</button></div>
+<div class="tablewrap"><table class="table"><thead><tr><th>Code</th><th>Employee</th><th>Department</th><th>Designation</th><th>Branch</th><th>Joining</th><th>Status</th></tr></thead><tbody id="empRows"></tbody></table></div></div>
+<div id="empForm" class="panel section hidden"><h3>Add Employee</h3><div class="formgrid">
+<div><label>Employee Code *</label><input id="e_code"></div><div><label>Full Name *</label><input id="e_name"></div><div><label>Mobile</label><input id="e_mobile"></div>
+<div><label>Email</label><input id="e_email"></div><div><label>Department</label><input id="e_dept"></div><div><label>Designation</label><input id="e_desig"></div>
+<div><label>Branch</label><select id="e_branch"></select></div><div><label>Joining Date</label><input id="e_join" type="date"></div><div><label>Employment Type</label><select id="e_type"><option>Permanent</option><option>Probation</option><option>Contract</option></select></div>
+<div><label>Gender</label><select id="e_gender"><option>Not Specified</option><option>Male</option><option>Female</option></select></div><div><label>Bank Account</label><input id="e_bank"></div><div><label>IFSC</label><input id="e_ifsc"></div>
+<div class="full"><label>Emergency Contact</label><input id="e_emergency"></div></div><div id="empErr" class="err"></div><div class="actions"><button class="btn secondary" onclick="closeEmp()">Cancel</button><button class="btn primary" onclick="saveEmp()">Save Employee</button></div></div></section>
+
+<section id="attendance" class="screen hidden"><div class="heading"><div><h1>Attendance</h1><span class="muted">Daily and monthly attendance</span></div><button class="btn primary" onclick="loadAttendance()">Refresh</button></div><div class="panel"><div class="tablewrap"><table class="table"><thead><tr><th>Date</th><th>Employee</th><th>Status</th><th>In</th><th>Out</th><th>Remarks</th></tr></thead><tbody id="attRows"></tbody></table></div></div></section>
+
+<section id="leave" class="screen hidden"><div class="heading"><div><h1>Leave Management</h1><span class="muted">Approval workflow and leave history</span></div></div><div class="panel"><div class="tablewrap"><table class="table"><thead><tr><th>Employee</th><th>Type</th><th>From</th><th>To</th><th>Days</th><th>Status</th><th>Action</th></tr></thead><tbody id="leaveRows"></tbody></table></div></div></section>
+
+<section id="payroll" class="screen hidden"><div class="heading"><div><h1>Payroll</h1><span class="muted">Salary structure and monthly processing</span></div></div><div class="cards"><div class="card"><div class="muted">Payroll Status</div><div class="metric">Ready</div></div><div class="card"><div class="muted">Employees</div><div id="payEmp" class="metric">0</div></div></div><div class="panel section"><h3>Payroll workflow</h3><p class="muted">Salary structure → Gross salary → PF/ESIC/PT/TDS → Net salary → Approval → Salary slip.</p></div></section>
+
+<section id="performance" class="screen hidden"><div class="heading"><div><h1>Performance & Appraisal</h1><span class="muted">Goals, reviews and appraisal history</span></div></div><div class="panel"><h3>Performance module</h3><p class="muted">Create goals, KPI reviews and appraisal cycles from the connected Supabase tables.</p></div></section>
+<section id="documents" class="screen hidden"><div class="heading"><div><h1>Employee Documents</h1><span class="muted">Secure documents through Supabase Storage</span></div></div><div class="panel"><h3>Document categories</h3><p class="muted">Aadhaar, PAN, bank proof, appointment letter, joining documents, certificates and salary slips.</p></div></section>
+<section id="reports" class="screen hidden"><div class="heading"><div><h1>Reports</h1><span class="muted">Export HR master and operational data</span></div></div><div class="panel"><button class="btn primary" onclick="exportCSV()">Export Employee CSV</button></div></section>
+<section id="settings" class="screen hidden"><div class="heading"><div><h1>Settings & Access</h1><span class="muted">Branches, masters, roles and permissions</span></div></div><div class="grid"><div class="panel"><h3>Roles</h3><p class="muted">Super Admin · HR Admin · HR Executive · Accounts · Branch Manager · Reporting Manager · Employee · Viewer</p></div><div class="panel"><h3>Security</h3><p class="muted">Supabase Auth + Row Level Security + Audit Logs</p></div></div></section>
+
+</div></main></div>
+<script>
+const SUPABASE_URL="YOUR_SUPABASE_URL";
+const SUPABASE_KEY="YOUR_SUPABASE_PUBLISHABLE_OR_ANON_KEY";
+const db=supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+let EMP=[];
+function cfg(){return !SUPABASE_URL.includes("YOUR_")&&!SUPABASE_KEY.includes("YOUR_")}
+async function signIn(){
+ let id=val('loginId'),pw=val('loginPw'); let er=document.getElementById('loginErr');er.textContent='';
+ if(!cfg()){er.textContent='Configure Supabase URL and publishable/anon key in index.html.';return}
+ let r=await db.auth.signInWithPassword({email:id,password:pw});
+ if(r.error){let p=await db.from('user_profiles').select('email').or(`username.eq.${id},mobile.eq.${id}`).maybeSingle();if(p.data?.email)r=await db.auth.signInWithPassword({email:p.data.email,password:pw})}
+ if(r.error){er.textContent=r.error.message;return} await boot()
+}
+async function boot(){
+ document.getElementById('login').classList.add('hidden');document.getElementById('app').classList.remove('hidden');
+ let u=(await db.auth.getUser()).data.user,p=(await db.from('user_profiles').select('*').eq('id',u.id).maybeSingle()).data;
+ document.getElementById('uname').textContent=p?.full_name||u.email;document.getElementById('urole').textContent=p?.role||'Employee';document.getElementById('avatar').textContent=(p?.full_name||u.email).charAt(0).toUpperCase();
+ await load()
+}
+async function load(){await loadEmp();await loadAttendance();await loadLeave();await loadBranches()}
+async function loadEmp(){let r=await db.from('employees').select('*').order('created_at',{ascending:false});if(r.error)return console.error(r.error);EMP=r.data||[];renderEmp();document.getElementById('mcEmp').textContent=EMP.length;document.getElementById('payEmp').textContent=EMP.length;document.getElementById('recent').innerHTML=EMP.slice(0,6).map(e=>`<tr><td>${x(e.employee_code)}</td><td>${x(e.full_name)}</td><td>${x(e.department)}</td><td>${x(e.branch)}</td><td><span class="badge green">${x(e.status||'Active')}</span></td></tr>`).join('')||'<tr><td colspan=5>No employees</td></tr>'}
+function renderEmp(){let q=(document.getElementById('empSearch')?.value||'').toLowerCase();let a=EMP.filter(e=>JSON.stringify(e).toLowerCase().includes(q));document.getElementById('empRows').innerHTML=a.map(e=>`<tr><td>${x(e.employee_code)}</td><td><b>${x(e.full_name)}</b><br><span class=muted>${x(e.mobile)}</span></td><td>${x(e.department)}</td><td>${x(e.designation)}</td><td>${x(e.branch)}</td><td>${x(e.joining_date)}</td><td><span class="badge green">${x(e.status||'Active')}</span></td></tr>`).join('')||'<tr><td colspan=7>No employees</td></tr>'}
+async function loadBranches(){let r=await db.from('branches').select('name').order('name');if(r.data)document.getElementById('e_branch').innerHTML=r.data.map(b=>`<option>${x(b.name)}</option>`).join('')}
+async function saveEmp(){let payload={employee_code:val('e_code'),full_name:val('e_name'),mobile:val('e_mobile'),email:val('e_email'),department:val('e_dept'),designation:val('e_desig'),branch:val('e_branch'),joining_date:val('e_join'),employment_type:val('e_type'),gender:val('e_gender'),bank_account:val('e_bank'),ifsc:val('e_ifsc'),emergency_contact:val('e_emergency'),status:'Active'};let r=await db.from('employees').insert(payload);if(r.error){document.getElementById('empErr').textContent=r.error.message;return}closeEmp();await loadEmp()}
+async function loadAttendance(){let r=await db.from('attendance').select('*,employees(full_name)').order('attendance_date',{ascending:false}).limit(100);if(r.error)return;document.getElementById('attRows').innerHTML=(r.data||[]).map(a=>`<tr><td>${x(a.attendance_date)}</td><td>${x(a.employees?.full_name||a.employee_id)}</td><td><span class="badge ${a.status==='Present'?'green':a.status==='Absent'?'red':'amber'}">${x(a.status)}</span></td><td>${x(a.check_in)}</td><td>${x(a.check_out)}</td><td>${x(a.remarks)}</td></tr>`).join('')||'<tr><td colspan=6>No attendance data</td></tr>';let today=new Date().toISOString().slice(0,10);let d=(r.data||[]).filter(a=>a.attendance_date===today);document.getElementById('mcPresent').textContent=d.filter(a=>a.status==='Present').length;document.getElementById('mcAbsent').textContent=d.filter(a=>a.status==='Absent').length}
+async function loadLeave(){let r=await db.from('leave_requests').select('*,employees(full_name)').order('created_at',{ascending:false}).limit(100);if(r.error)return;document.getElementById('leaveRows').innerHTML=(r.data||[]).map(l=>`<tr><td>${x(l.employees?.full_name||l.employee_id)}</td><td>${x(l.leave_type)}</td><td>${x(l.from_date)}</td><td>${x(l.to_date)}</td><td>${x(l.days)}</td><td><span class="badge ${l.status==='Approved'?'green':l.status==='Rejected'?'red':'amber'}">${x(l.status)}</span></td><td>${l.status==='Pending'?`<button class="btn secondary" onclick="leaveStatus('${l.id}','Approved')">Approve</button> <button class="btn danger" onclick="leaveStatus('${l.id}','Rejected')">Reject</button>`:''}</td></tr>`).join('')||'<tr><td colspan=7>No leave requests</td></tr>';document.getElementById('mcPending').textContent=(r.data||[]).filter(l=>l.status==='Pending').length}
+async function leaveStatus(id,status){let r=await db.from('leave_requests').update({status}).eq('id',id);if(r.error)alert(r.error.message);else loadLeave()}
+function page(id,b){document.querySelectorAll('.screen').forEach(s=>s.classList.add('hidden'));document.getElementById(id).classList.remove('hidden');document.getElementById('title').textContent=id[0].toUpperCase()+id.slice(1);document.querySelectorAll('.nav button').forEach(z=>z.classList.remove('active'));if(b)b.classList.add('active')}
+function openEmp(){document.getElementById('empForm').classList.remove('hidden');document.getElementById('empForm').scrollIntoView({behavior:'smooth'})}function closeEmp(){document.getElementById('empForm').classList.add('hidden')}
+function exportCSV(){let c=['employee_code','full_name','mobile','email','department','designation','branch','joining_date','employment_type','status'];let s=[c.join(','),...EMP.map(e=>c.map(k=>`"${String(e[k]??'').replaceAll('"','""')}"`).join(','))].join('\n');let a=document.createElement('a');a.href=URL.createObjectURL(new Blob([s],{type:'text/csv'}));a.download='kothari-hyundai-employees.csv';a.click()}
+function val(id){return document.getElementById(id).value.trim()}function x(v){return String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]))}
+async function signOut(){await db.auth.signOut();location.reload()}
+db.auth.onAuthStateChange((e)=>{if(e==='SIGNED_IN')boot()})
+</script></body></html>
