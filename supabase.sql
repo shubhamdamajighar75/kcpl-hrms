@@ -60,6 +60,18 @@ create or replace function public.current_user_branch()
 returns uuid language sql stable security definer set search_path=public
 as $$ select branch_id from public.user_profiles where id=auth.uid() limit 1 $$;
 
+create or replace function public.login_email_for_username(p_username text)
+returns text language sql stable security definer set search_path=public,auth
+as $$
+ select u.email
+ from auth.users u
+ join public.user_profiles p on p.id=u.id
+ where lower(p.username)=lower(trim(p_username)) and p.active is true
+ limit 1
+$$;
+revoke all on function public.login_email_for_username(text) from public;
+grant execute on function public.login_email_for_username(text) to anon,authenticated;
+
 -- Read access for authenticated HRMS users
 drop policy if exists auth_read_branches on public.branches;
 create policy auth_read_branches on public.branches for select to authenticated using (true);
@@ -131,3 +143,45 @@ on conflict(name) do nothing;
 -- insert into public.user_profiles(id,username,mobile,full_name,role,branch_id)
 -- values ('AUTH_USER_UUID','admin','9999999999','HR Admin','Super Admin',
 -- (select id from public.branches where name='Kothari Hyundai'));
+
+
+-- MERGED v3 salary import upgrade
+
+-- v3.1: salary sheet import (full KCPL format)
+alter table public.employees add column if not exists dob date, add column if not exists aadhaar text, add column if not exists pan text,
+ add column if not exists pf_no text, add column if not exists esi_no text, add column if not exists uan text, add column if not exists location text;
+alter table public.payroll add column if not exists earned_conv numeric default 0, add column if not exists earned_wash numeric default 0, add column if not exists lwf numeric default 0,
+ add column if not exists advance_ded numeric default 0, add column if not exists mediclaim numeric default 0, add column if not exists pt_arrears numeric default 0,
+ add column if not exists uniform numeric default 0, add column if not exists docket numeric default 0;
+
+
+-- MERGED v4 incentive/recruitment upgrade
+-- KCPL / Kothari Hyundai HRMS v4 upgrade
+create table if not exists public.employee_incentives (
+ id uuid primary key default gen_random_uuid(), employee_id uuid not null references public.employees(id) on delete cascade,
+ incentive_month date not null, amount numeric not null default 0, incentive_type text not null default 'Incentive', remarks text, created_by uuid references auth.users(id), created_at timestamptz default now(),
+ unique(employee_id,incentive_month,incentive_type)
+);
+alter table public.employee_incentives enable row level security;
+drop policy if exists employee_incentives_read on public.employee_incentives;
+create policy employee_incentives_read on public.employee_incentives for select to authenticated using (true);
+drop policy if exists employee_incentives_write on public.employee_incentives;
+create policy employee_incentives_write on public.employee_incentives for all to authenticated using (true) with check (true);
+
+create table if not exists public.recruitment_candidates (
+ id uuid primary key default gen_random_uuid(), name text not null, mobile text, email text, position text, interview_date date, status text not null default 'Applied', created_at timestamptz default now(), created_by uuid references auth.users(id)
+);
+alter table public.recruitment_candidates enable row level security;
+drop policy if exists recruitment_read on public.recruitment_candidates;
+create policy recruitment_read on public.recruitment_candidates for select to authenticated using (true);
+drop policy if exists recruitment_write on public.recruitment_candidates;
+create policy recruitment_write on public.recruitment_candidates for all to authenticated using (true) with check (true);
+
+
+-- v7 statutory payroll configuration and PF/EPS/EDLI calculation storage
+create table if not exists public.payroll_statutory_settings(
+ id uuid primary key default gen_random_uuid(), effective_from date not null, pf_wage_ceiling numeric not null default 25000, employee_pf_rate numeric not null default 12, employer_pf_rate numeric not null default 12, eps_rate numeric not null default 8.33, edli_rate numeric not null default 0.50, pt_rule text, created_at timestamptz default now(), unique(effective_from)
+);
+insert into public.payroll_statutory_settings(effective_from,pf_wage_ceiling,employee_pf_rate,employer_pf_rate,eps_rate,edli_rate,pt_rule) values ('2026-09-17',25000,12,12,8.33,0.50,'Maharashtra PT: configure applicable slab in HR Administration') on conflict(effective_from) do nothing;
+alter table public.salary_structures add column if not exists pf_wage numeric default 0, add column if not exists pf_ceiling numeric default 25000, add column if not exists pf_emp_rate numeric default 12, add column if not exists pf_er_rate numeric default 12, add column if not exists eps_rate numeric default 8.33, add column if not exists edli_rate numeric default 0.50, add column if not exists vpf numeric default 0;
+alter table public.payroll add column if not exists employee_pf numeric default 0, add column if not exists employer_pf numeric default 0, add column if not exists eps numeric default 0, add column if not exists edli numeric default 0, add column if not exists pt numeric default 0, add column if not exists vpf numeric default 0;
